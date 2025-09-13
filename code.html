@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>JPG 转 PNG 自动保存</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      margin-top: 50px;
+      background-color: #f3f3f3;
+    }
+    #drop-area {
+      border: 3px dashed #ccc;
+      padding: 50px;
+      width: 400px;
+      margin: auto;
+      background-color: #fff;
+      transition: background-color 0.3s, border-color 0.3s;
+    }
+    #drop-area.hover {
+      border-color: #0078D7;
+      background-color: #e6f7ff;
+    }
+    #counter {
+      margin-top: 20px;
+      font-size: 18px;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+
+<h2>拖拽 JPG 图片到此区域，自动保存为 PNG</h2>
+
+<div id="drop-area">
+  拖放 JPG 文件到这里
+</div>
+
+<div id="counter">已保存 0 张图片</div>
+
+<script>
+  let counter = 0;
+  const dropArea = document.getElementById('drop-area');
+  const counterDisplay = document.getElementById('counter');
+
+  // 阻止默认行为（拖放）
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    dropArea.addEventListener(eventName, e => e.preventDefault(), false);
+    document.body.addEventListener(eventName, e => e.preventDefault(), false);
+  });
+
+  // 拖拽样式
+  dropArea.addEventListener('dragover', () => dropArea.classList.add('hover'));
+  dropArea.addEventListener('dragleave', () => dropArea.classList.remove('hover'));
+
+  // 处理拖拽图片
+  dropArea.addEventListener('drop', handleDrop);
+
+  function handleDrop(e) {
+    dropArea.classList.remove('hover');
+    const files = e.dataTransfer.files;
+    for (let file of files) {
+      if (file.type === 'image/jpeg') {
+        convertToPNGAndDownload(file);
+      } else {
+        alert('只支持 JPG 图片');
+      }
+    }
+  }
+
+  function convertToPNGAndDownload(file) {
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const img = new Image();
+      img.onload = function () {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+
+        canvas.toBlob(function (blob) {
+          counter++;
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = counter + '.png';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          counterDisplay.innerText = `已保存 ${counter} 张图片`;
+        }, 'image/png');
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+</script>
+
+</body>
+</html>
